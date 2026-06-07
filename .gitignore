@@ -3,7 +3,14 @@ env/
 __pycache__/
 *.pyc
 db.sqlite3
+*.sqlite3
+*.db
 media/
 downloads/
+.coverage
+htmlcov/
+.pytest_cache/
+cookies.txt
+*.log
 .vscode/
 .idea/
