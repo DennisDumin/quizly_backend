@@ -2,6 +2,7 @@ from django.db import transaction
 
 from quiz_app.models import Question, Quiz
 
+from .exceptions import QuizServiceError
 from .gemini_service import generate_quiz_data
 from .transcript_service import transcribe_audio
 from .youtube_service import download_audio_from_youtube
@@ -9,14 +10,24 @@ from .youtube_service import download_audio_from_youtube
 
 def create_quiz_from_youtube_url(user, url):
     """Creates a quiz from a YouTube URL."""
-    audio_path = download_audio_from_youtube(url)
+    audio_path = None
 
     try:
-        transcript = transcribe_audio(audio_path)
-        quiz_data = generate_quiz_data(transcript)
+        audio_path = download_audio_from_youtube(url)
+        quiz_data = build_quiz_data_from_audio(audio_path)
         return save_quiz(user, url, quiz_data)
+    except QuizServiceError:
+        raise
+    except OSError as exc:
+        raise QuizServiceError("Quiz generation failed.") from exc
     finally:
         delete_audio_file(audio_path)
+
+
+def build_quiz_data_from_audio(audio_path):
+    """Builds validated quiz data from an audio file."""
+    transcript = transcribe_audio(audio_path)
+    return generate_quiz_data(transcript)
 
 
 @transaction.atomic

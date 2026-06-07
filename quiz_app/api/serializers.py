@@ -1,6 +1,11 @@
+from urllib.parse import urlparse
+
 from rest_framework import serializers
 
 from quiz_app.models import Question, Quiz
+
+
+YOUTUBE_HOSTS = {"youtube.com", "m.youtube.com", "www.youtube.com", "youtu.be"}
 
 
 class QuestionSerializer(serializers.ModelSerializer):
@@ -48,3 +53,12 @@ class QuizCreateSerializer(serializers.Serializer):
     """Validates the YouTube URL used to generate a quiz."""
 
     url = serializers.URLField(max_length=500)
+
+    def validate_url(self, value):
+        parsed_url = urlparse(value)
+        host = parsed_url.netloc.lower()
+
+        if host not in YOUTUBE_HOSTS:
+            raise serializers.ValidationError("Enter a valid YouTube URL.")
+
+        return value

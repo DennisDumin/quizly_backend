@@ -2,6 +2,9 @@ from pathlib import Path
 
 from django.conf import settings
 from yt_dlp import YoutubeDL
+from yt_dlp.utils import DownloadError
+
+from .exceptions import QuizDownloadError
 
 
 def get_download_dir():
@@ -35,8 +38,12 @@ def download_audio_from_youtube(url):
     """Downloads a YouTube video as an MP3 audio file."""
     download_dir = get_download_dir()
 
-    with YoutubeDL(get_ydl_options(download_dir)) as ydl:
-        info = ydl.extract_info(url, download=True)
+    try:
+        with YoutubeDL(get_ydl_options(download_dir)) as ydl:
+            info = ydl.extract_info(url, download=True)
+    except DownloadError as exc:
+        message = "Could not download audio from the provided YouTube URL."
+        raise QuizDownloadError(message) from exc
 
     return get_audio_path(download_dir, info)
 
@@ -47,6 +54,6 @@ def get_audio_path(download_dir, info):
     audio_path = download_dir / f"{video_id}.mp3"
 
     if not audio_path.exists():
-        raise FileNotFoundError("Audio file could not be created.")
+        raise QuizDownloadError("Audio file could not be created.")
 
     return audio_path

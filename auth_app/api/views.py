@@ -5,6 +5,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .serializers import RegisterSerializer, UserSerializer
@@ -38,6 +39,19 @@ def delete_auth_cookies(response):
     """Deletes all authentication cookies."""
     response.delete_cookie(settings.ACCESS_TOKEN_COOKIE_NAME)
     response.delete_cookie(settings.REFRESH_TOKEN_COOKIE_NAME)
+
+
+def blacklist_refresh_token(request):
+    """Invalidates the refresh token cookie if blacklisting is available."""
+    token = request.COOKIES.get(settings.REFRESH_TOKEN_COOKIE_NAME)
+
+    if not token:
+        return
+
+    try:
+        RefreshToken(token).blacklist()
+    except TokenError:
+        return
 
 
 def raise_authentication_error(message="Invalid credentials."):
@@ -103,6 +117,7 @@ class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        blacklist_refresh_token(request)
         response = Response(
             {
                 "detail": (
