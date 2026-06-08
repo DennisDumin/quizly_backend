@@ -4,6 +4,7 @@ from json import JSONDecodeError
 
 from django.conf import settings
 from google import genai
+from google.genai import errors
 
 from .exceptions import QuizDataError, QuizProviderError
 
@@ -52,12 +53,20 @@ def request_quiz_from_gemini(transcript):
     """Sends the transcript to Gemini and returns the raw response text."""
     client = get_gemini_client()
     prompt = QUIZ_PROMPT_TEMPLATE.format(transcript=transcript)
-    response = client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=prompt,
-    )
+    response = generate_gemini_response(client, prompt)
 
     return response.text
+
+
+def generate_gemini_response(client, prompt):
+    """Requests quiz content from Gemini."""
+    try:
+        return client.models.generate_content(
+            model=settings.GEMINI_MODEL,
+            contents=prompt,
+        )
+    except errors.APIError as exc:
+        raise QuizProviderError("Gemini API request failed.") from exc
 
 
 def get_gemini_client():
