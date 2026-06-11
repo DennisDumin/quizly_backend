@@ -64,6 +64,21 @@ class AuthEndpointTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(settings.ACCESS_TOKEN_COOKIE_NAME, response.cookies)
         self.assertIn(settings.REFRESH_TOKEN_COOKIE_NAME, response.cookies)
+        self.assertNotIn("access", response.data)
+        self.assertNotIn("refresh", response.data)
+        self.assertEqual(response.data["user"]["username"], "existing-user")
+
+    def test_login_rejects_invalid_credentials(self):
+        create_user()
+
+        response = self.client.post(
+            "/api/login/",
+            {"username": "existing-user", "password": "wrong-password"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 401)
+        self.assertNotIn(settings.ACCESS_TOKEN_COOKIE_NAME, response.cookies)
 
     def test_refresh_sets_new_access_cookie(self):
         user = create_user()

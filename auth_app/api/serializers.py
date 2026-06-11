@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -36,3 +37,19 @@ class RegisterSerializer(serializers.Serializer):
     def create(self, validated_data):
         validated_data.pop("confirmed_password")
         return User.objects.create_user(**validated_data)
+
+
+class LoginSerializer(TokenObtainPairSerializer):
+    """Validates credentials and prepares the JWT cookie response data."""
+
+    default_error_messages = {"no_active_account": "Invalid credentials."}
+
+    def validate(self, attrs):
+        token_data = super().validate(attrs)
+        self.access_token = token_data["access"]
+        self.refresh_token = token_data["refresh"]
+
+        return {
+            "detail": "Login successfully!",
+            "user": UserSerializer(self.user).data,
+        }

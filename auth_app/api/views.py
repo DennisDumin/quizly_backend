@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.contrib.auth import authenticate
 from rest_framework import status
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -7,8 +6,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .serializers import RegisterSerializer, UserSerializer
+from .serializers import LoginSerializer, RegisterSerializer
 
 
 def set_access_cookie(response, access_token):
@@ -75,40 +75,22 @@ class RegisterView(APIView):
         )
 
 
-class LoginView(APIView):
-    """Authenticates a user and sets JWT cookies."""
+class LoginView(TokenObtainPairView):
+    """Authenticates a user with SimpleJWT and sets JWT cookies."""
 
     permission_classes = [AllowAny]
+    serializer_class = LoginSerializer
 
-    def post(self, request):
-        user = self.get_authenticated_user(request)
-        refresh = RefreshToken.for_user(user)
-        response = self.get_login_response(user)
+    def post(self, request, *args, **kwargs):
+        """Validates credentials and returns user data with auth cookies."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        response = Response(serializer.validated_data, status=status.HTTP_200_OK)
 
-        set_access_cookie(response, refresh.access_token)
-        set_refresh_cookie(response, refresh)
+        set_access_cookie(response, serializer.access_token)
+        set_refresh_cookie(response, serializer.refresh_token)
 
         return response
-
-    def get_authenticated_user(self, request):
-        user = authenticate(
-            username=request.data.get("username"),
-            password=request.data.get("password"),
-        )
-
-        if user is None:
-            raise_authentication_error()
-
-        return user
-
-    def get_login_response(self, user):
-        return Response(
-            {
-                "detail": "Login successfully!",
-                "user": UserSerializer(user).data,
-            },
-            status=status.HTTP_200_OK,
-        )
 
 
 class LogoutView(APIView):
