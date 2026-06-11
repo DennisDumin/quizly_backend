@@ -23,21 +23,38 @@ This repository contains only the backend. Do not commit frontend files,
 
 1. Create and activate a virtual environment.
 
+Windows:
+
 ```powershell
 python -m venv env
 .\env\Scripts\Activate.ps1
 ```
 
+macOS/Linux:
+
+```bash
+python3 -m venv env
+source env/bin/activate
+```
+
 2. Install the dependencies.
 
-```powershell
+```bash
 pip install -r requirements.txt
 ```
 
 3. Create your local environment file.
 
+Windows:
+
 ```powershell
 Copy-Item .env.example .env
+```
+
+macOS/Linux:
+
+```bash
+cp .env.example .env
 ```
 
 4. Add your real values to `.env`.
@@ -46,8 +63,9 @@ Copy-Item .env.example .env
 SECRET_KEY=your_django_secret_key
 DEBUG=True
 GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-flash-lite-latest
 ALLOWED_HOSTS=127.0.0.1,localhost
-CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+CORS_ALLOWED_ORIGINS=http://localhost:5500,http://127.0.0.1:5500
 ```
 
 5. Install FFmpeg and make sure it is available in your system `PATH`.
@@ -56,14 +74,14 @@ Whisper and yt-dlp need FFmpeg to extract and process audio files.
 
 6. Run migrations and create an admin user.
 
-```powershell
+```bash
 python manage.py migrate
 python manage.py createsuperuser
 ```
 
 7. Start the backend.
 
-```powershell
+```bash
 python manage.py runserver
 ```
 
@@ -76,6 +94,7 @@ The API is available at `http://127.0.0.1:8000/`.
 | `SECRET_KEY` | Yes | Django secret key for the local project. |
 | `DEBUG` | Yes | Use `True` for local development. |
 | `GEMINI_API_KEY` | Yes | API key from Google AI Studio. |
+| `GEMINI_MODEL` | No | Gemini model used for quiz generation. |
 | `ALLOWED_HOSTS` | Yes | Comma-separated Django host allowlist. |
 | `CORS_ALLOWED_ORIGINS` | Yes | Comma-separated frontend origins allowed by CORS. |
 
@@ -147,13 +166,13 @@ Successful response: `201 Created`
 
 Run the Django system check:
 
-```powershell
+```bash
 python manage.py check
 ```
 
 Run the test suite:
 
-```powershell
+```bash
 python manage.py test
 ```
 
